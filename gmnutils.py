@@ -22,15 +22,15 @@ class hoperator(object):
 	def __init__(self, matrix, subsystems):
 		self.matrix = array(matrix, dtype=numpy.complex128)
 		self.__dim = self.matrix.shape
-		self.__dimH = self.matrix.shape[0]
+		self._dimH = self.matrix.shape[0]
 		self.__dimsubs = tuple(subsystems)
 		self.__nsys = len(subsystems)
 		if self.__dim[0] != self.__dim[1]:
 			raise TypeError("Matrix has to be a square matrix.")
 		if [i for i in (self.matrix-self.matrix.conjugate().transpose()).flat if abs(i) > 1e-12]:
 			raise TypeError("Matrix has to be Hermitian.")
-		if self.__dimH != prod(self.__dimsubs):
-			raise TypeError("Matrix dimension is %d but expected to be %d by multiplying the dimensions of the subsystems." %(self.__dimH,prod(self.__dimsubs)))
+		if self._dimH != prod(self.__dimsubs):
+			raise TypeError("Matrix dimension is %d but expected to be %d by multiplying the dimensions of the subsystems." %(self._dimH,prod(self.__dimsubs)))
 	def ptranspose(self,subsys):
 		"""
 		Partial transpose.
@@ -93,6 +93,31 @@ class densitymatrix(hoperator):
 		hoperator.__init__(self,matrix,subsystems)
 		if (numpy.abs(numpy.trace(self.matrix)) -1) > 1e-12:
 			raise TypeError("Trace of matrix is expected to be 1.")
+	def ppt(self,subsys):
+		"""
+		Test for positive partial transpose [1].
+		[1] A. Peres, Phys. Rev. Lett. 77, 1413 (1996).
+
+		subsys : list
+			A list constaining the subsytems of one part of the splitting.
+		
+		>>> x = densitymatrix([[1./2,0,0,1./2],[0,0,0,0],[0,0,0,0],[1./2,0,0,1./2]],[2,2])
+		
+		Positivity with respect to the splitting A|B
+		>>> x.ppt([0])
+		False
+
+		>>> x = densitymatrix([[1./2,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,1./2]],[2,2])
+		
+		Positivity with respect to the splitting A|B
+		>>> x.ppt([0])
+		True
+		"""
+		try:
+			numpy.linalg.cholesky(self.ptranspose(subsys)+1e-100*numpy.eye(self._dimH))
+		except numpy.linalg.LinAlgError:
+			return False
+		return True
 	def negativity(self,subsys):
 		"""
 		Negativity
@@ -124,6 +149,17 @@ class randomlocalmeas(hoperator):
 
 	Initialize class
 	>>> A = randomlocalmeas([2,2])
+
+	create random local Measurement
+	>>> A.random()
+	array([[-0.50414805+0.j        ,  0.85156812-0.64451803j,
+	        -0.10785329-0.10199746j,  0.31257410+0.03440337j],
+	       [ 0.85156812+0.64451803j, -1.14247832+0.j        ,
+	         0.05178087+0.31016915j, -0.24441243-0.23114219j],
+	       [-0.10785329+0.10199746j,  0.05178087-0.31016915j,
+	         0.13704859-0.j        , -0.23149194+0.17520704j],
+	       [ 0.31257410-0.03440337j, -0.24441243+0.23114219j,
+	        -0.23149194-0.17520704j,  0.31057354-0.j        ]])
 	"""
 	def __init__(self, subsystems):
 		self.__dimsubs = tuple(subsystems)

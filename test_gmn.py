@@ -53,11 +53,16 @@ class Test_densitymatrix(unittest.TestCase):
 		ev =  numpy.linalg.eigvalsh(ptrho)
 		self.neg = numpy.sum(numpy.absolute(ev[ev < 0]))
 		self.ghz = [[1./2,0,0,0,0,0,0,1./2],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[1./2,0,0,0,0,0,0,1./2]]
+		self.sep = [[1./2,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,1./2]]
 	
 	def test_densitymatrix(self):
 		# should raise an exception for non unit trace matrices
 		with self.assertRaises(TypeError):
 			densitymatrix(2*self.rho.matrix,self.subsystems)
+		# GHZ state is not PPT
+		self.assertEqual(False,densitymatrix(self.ghz,self.subsystems).ppt([0]))
+		# Separable state is PPT
+		self.assertEqual(True,densitymatrix(self.sep,self.subsystems).ppt([0]))
 		# make sure negativity is properly calculated
 		self.assertEqual(0.5,densitymatrix(self.ghz,self.subsystems).negativity([0]))
 		self.assertEqual(self.neg,self.rho.negativity([0]))
