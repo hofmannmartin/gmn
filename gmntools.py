@@ -9,7 +9,7 @@ from cvxopt.base import spmatrix
 from cvxopt import solvers
 
 import numpy
-from numpy import array, arange, prod, zeros
+from numpy import array, arange, prod, zeros, eye
 
 # ### set solver options ####
 # Set options for standard sdp solver
@@ -33,15 +33,11 @@ class gmn():
 		self.rhom = {}
 		self.status = ''
 		if matrix != None:
-			#print 'Initializing gmn class with given densitymatrix'
 			self.setdensitymatrix(matrix)
 		else:
-			#print 'initializing gmn class with fully mixed state'
 			self.__rho = None
-		#self.operatorbasis = [hoperator(o,subsystems) for o in opbasis]
 		self.setoperatorbasis(opbasis)
 	def __initoperatorbasis(self):
-		#print 'initializing standard operator basis ...'
 		self.operatorbasis = []
 		for i in arange(self.__dimH):
 			tmp = zeros(self.__dim, dtype=numpy.complex128)
@@ -56,9 +52,7 @@ class gmn():
 				tmp[x,y] = -1.j
 				tmp[y,x] = 1.j
 				self.operatorbasis += [hoperator(tmp,self.__dimsubs)]
-		#print 'done'
 	def __initrealoperatorbasis(self):
-		#print 'initializing standard operator basis ...'
 		self.operatorbasis = []
 		for i in arange(self.__dimH):
 			tmp = zeros(self.__dim, dtype=numpy.complex128)
@@ -69,7 +63,6 @@ class gmn():
 				tmp = zeros(self.__dim, dtype=numpy.complex128)
 				tmp[x,y] = tmp[y,x] = 1.
 				self.operatorbasis += [hoperator(tmp,self.__dimsubs)]
-		#print 'done'
 	def witness_expectationvalue(self,rho=None):
 		if not self.W:
 			raise TypeError("Memberfuction availible after using Memberfunctin gmn only.")
@@ -78,13 +71,10 @@ class gmn():
 		else:
 			return numpy.trace(numpy.dot(self.W['W']),rho)
 	def setdensitymatrix(self,rho):
-		#print 'setting up density matrix'
 		self.__rho = densitymatrix(rho,self.__dimsubs)
 	def setoperatorbasis(self,opbasis=[]):
-		#print 'setting up operator basis'
 		self.operatorbasis = [hoperator(o,self.__dimsubs) for o in opbasis]
 	def setrealsymmbasis(self):
-		#print 'setting up operator basis'
 		self.__initrealoperatorbasis()
 	def setpaulibasis(self):
 		if not all([2==i for i in self.__dimsubs]):
@@ -119,7 +109,6 @@ class gmn():
 		else:
 			return solvers.sdp(c,Gs=G,hs=h,solver='dsdp')
 	def __W(self,sol):
-		#print 'obtaining the witness and its decompositions from the solution...'
 		nop = len(self.operatorbasis)
 		self.W = {}
 		W =  numpy.sum([sol['x'][index]*op.matrix for index,op in enumerate(self.operatorbasis)],axis=0)
@@ -134,10 +123,8 @@ class gmn():
 			Pm = numpy.sum([sol['x'][i*nop+k]*op.matrix for k,op in enumerate(self.operatorbasis)],axis=0)
 			self.W['P_'+m] = Pm
 			self.W['Q_'+m] = hoperator(W-Pm,self.__dimsubs).ptranspose(subsys)
-		#print 'done'
 		return 0
 	def __rhom(self,sol,real=False):
-		#print 'obatining the decomposition of the state into \sum_m \\rho_m...'
 		self.rhom = {}
 		for i in range(1,2**(self.__nsys -1)):
 			temp = map(int,numpy.binary_repr(i,self.__nsys))
@@ -153,7 +140,6 @@ class gmn():
 			else:
 				rhom += array(sol['zs'][i-1])
 			self.rhom['rho_'+m] = rhom
-		#print 'done'
 		return 0
 	def gmn(self,real=False,altsolver=None):
 		if not self.__rho:
@@ -163,26 +149,19 @@ class gmn():
 		if not self.operatorbasis:
 			self.__initoperatorbasis()
 		#setting up SPD
-		#print 'starting to parse the semidefinite problem ...'
-		#setting up problem vector
-		#print '\tinititializing problem vector c ...'
+		##setting up problem vector
 		nop = len(self.operatorbasis)
 		c = numpy.zeros(nop*2**(self.__nsys-1), dtype=numpy.float64)
 		for index,o in enumerate(self.operatorbasis):
 			c[index] = numpy.trace(numpy.dot(rho,o.matrix)).real
-		#print '\tdone'
-		#setting up semidefinite constraints
-		#print '\tinitializing semidefinite constraints ...'
+		##setting up semidefinite constraints
 		F0 = []
 		F = []
 		##setting up constraint P_m >= 0
-		#print '\t\tsetting up P_m >= 0 ...'
 		for i in range(1,2**(self.__nsys-1)):
 			F0 += [numpy.zeros(self.__dim)]
 			F += [[numpy.zeros(self.__dim) for j in range(i*nop)] + [o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
-		#print '\t\tdone'
 		##setting up constraint (W-P_m)^(T_m) >= 0
-		#print '\t\tsetting up Q_m >= 0 ...'
 		for i in range(1,2**(self.__nsys -1)):
 			temp = map(int,numpy.binary_repr(i,self.__nsys))
 			subsys = []
@@ -191,29 +170,21 @@ class gmn():
 					subsys.append(index)
 			F0 += [numpy.zeros(self.__dim)]
 			F += [[o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((i-1)*nop)] + [-o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
-		#print '\t\tdone'
 		##setting up constraint (W-P_m)^(T_m) <= 1
-		#print '\t\tsetting up Q_m <= 1 ...'
 		for i in range(1,2**( self.__nsys -1)):
 			temp = map(int,numpy.binary_repr(i,self.__nsys))
 			subsys = []
 			for index,j in enumerate(temp):
 				if j ==1:
 					subsys.append(index)
-			F0 += [numpy.eye(self.__dimH,dtype=numpy.complex128)]
+			F0 += [eye(self.__dimH,dtype=numpy.complex128)]
 			F += [[-o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((i-1)*nop)] + [o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
-		#print '\t\tdone'
-		#print '\tdone'
-		#print 'done'
-		#print 'solving semidefinite program...'
 		sol = self.__solve(c,F0,F,real,altsolver)
-		#print 'done'
 		self.status = sol['status']
 		self.__W(sol)
 		self.__rhom(sol,real)
 		return -sol['primal objective']
 	def __rho_part_info(self,sol,real= False):
-		#print 'obatining the least entangled state compatible with measurements...'
 		rho = zeros(self.__dim, dtype=numpy.complex128)
 		if not real:
 			rho += 2*array(sol['zs'][0])[:self.__dimH,:self.__dimH]
@@ -223,58 +194,44 @@ class gmn():
 		tmp = (rho+rho.conjugate().transpose())/2.
 		tmp /= numpy.trace(tmp)
 		self.setdensitymatrix(tmp)
-		#print 'done'
 		return 0
 	def __W_part_info(self,sol,measurements):
-		#print 'obatining the optimal witness within the span of all measured operators...'
 		nmes= len(measurements)
 		for i in range(nmes):
 			self.W_part_info += sol['x'][i]*measurements[i][0]
-		#print 'done'
 		return 0
 	def gmn_partial_info(self,meas,real=False,altsolver=None):
 		measurements = list(meas)
 		if type(measurements) is not list:
 			if [m for m in measurements if (type(m) is not tuple and type(m) is not list) or len(m)!=2 or type(m[1]) not in [int,complex,float,long]]:
 				raise TypeError("'mesurements' must be a list of tuples containing the measured operator and its expectation value '(operator,expectation_value)'")
-		measurements += [(numpy.eye(self.__dimH,dtype=numpy.complex128),1.)]
+		measurements += [(eye(self.__dimH,dtype=numpy.complex128),1.)]
 		#initialize standard operatorbasis if no operatorbasis is provided
 		if not self.operatorbasis:
 			self.__initoperatorbasis()
 		#setting up SDP
-		#print 'starting to parse the semidefinite problem ...'
-		#setting up problem vector
-		#print '\tinititializing problem vector c ...'
+		##setting up problem vector
 		nmes= len(measurements)
 		mesop = [array(m[0], dtype=numpy.complex128) for m in measurements]
 		nop = len(self.operatorbasis)
 		c = numpy.zeros(nmes+nop*2**(self.__nsys-1), dtype=numpy.float64)
 		for index,o in enumerate(measurements):
 			c[index] = o[1]
-		#print '\tdone'
-		#setting up semidefinite constraints
-		#print '\tinitializing semidefinite constraints ...'
+		##setting up semidefinite constraints
 		F0 = []
 		F = []
 		##setting up constraint M >= W
-		#print '\t\tsetting up M >= W ...'
 		F0 += [numpy.zeros(self.__dim)]
 		F += [[m[0] for m in measurements] + [-o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**(self.__nsys-1)-1)*nop)]]
-		#print '\t\tdone'
 		##setting up constraint Q_m <= 1
-		#print '\t\tsetting up Q_m <= 1 ...'
 		for i in range(1,2**(self.__nsys-1)):
-			F0 += [numpy.eye(self.__dimH,dtype=numpy.complex128)]
+			F0 += [eye(self.__dimH,dtype=numpy.complex128)]
 			F += [[numpy.zeros(self.__dim) for j in range(nmes)] + [numpy.zeros(self.__dim) for j in range(i*nop)] + [-o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
-		#print '\t\tdone'
 		##setting up constraint Q_m >= 0
-		#print '\t\tsetting up Q_m >= 0 ...'
 		for i in range(1,2**(self.__nsys-1)):
 			F0 += [numpy.zeros(self.__dim)]
 			F += [[numpy.zeros(self.__dim) for j in range(nmes)] + [numpy.zeros(self.__dim) for j in range(i*nop)] + [o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
-		#print '\t\tdone'
 		##setting up constraint W-Q_m^(T_m) >= 0
-		#print '\t\tsetting up W-Q_m^(T_m) >= 0 ...'
 		for i in range(1,2**(self.__nsys -1)):
 			temp = map(int,numpy.binary_repr(i,self.__nsys))
 			subsys = []
@@ -283,15 +240,47 @@ class gmn():
 					subsys.append(index)
 			F0 += [numpy.zeros(self.__dim)]
 			F += [[numpy.zeros(self.__dim) for j in range(nmes)] + [o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((i-1)*nop)] + [-o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
-		#print '\t\tdone'
-		#print '\tdone'
-		#print 'done'
-		#print 'solving semidefinite program...'
 		sol = self.__solve(c,F0,F,real,altsolver)
-		#print 'done'
 		self.status = sol['status']
 		self.__rho_part_info(sol,real)
 		self.__W_part_info(sol,measurements)
 		return -sol['primal objective']
+	def gmn_partial_info_ppt(self,meas,real=False,altsolver=None):
+		measurements = list(meas)
+		if type(measurements) is not list:
+			if [m for m in measurements if (type(m) is not tuple and type(m) is not list) or len(m)!=2 or type(m[1]) not in [int,complex,float,long]]:
+				raise TypeError("'mesurements' must be a list of tuples containing the measured operator and its expectation value '(operator,expectation_value)'")
+		measurements += [(eye(self.__dimH,dtype=numpy.complex128),1.)]
+		#setting up SDP
+		##setting up problem vector
+		nmes= len(measurements)
+		mesop = [hoperator(m[0],self.__dimsubs) for m in measurements]
+		c = numpy.zeros(nmes, dtype=numpy.float64)
+		for index,o in enumerate(measurements):
+			c[index] = o[1]
+		##setting up semidefinite constraints
+		F0 = []
+		F = []
+		##setting up constraint W^(T_m) >= 0
+		for i in range(1,2**(self.__nsys -1)):
+			temp = map(int,numpy.binary_repr(i,self.__nsys))
+			subsys = []
+			for index,j in enumerate(temp):
+				if j ==1:
+					subsys.append(index)
+			F0 += [numpy.zeros(self.__dim)]
+			F += [[o.ptranspose(subsys) for o in mesop]]
+		##setting up constraint W^(T_m) <= 1
+		for i in range(1,2**(self.__nsys -1)):
+			temp = map(int,numpy.binary_repr(i,self.__nsys))
+			subsys = []
+			for index,j in enumerate(temp):
+				if j ==1:
+					subsys.append(index)
+			F0 += [eye(self.__dimH)]
+			F += [[-o.ptranspose(subsys) for o in mesop]]
+		sol = self.__solve(c,F0,F,real,altsolver)
+		self.status = sol['status']
+		return -sol['primal objective']
 
-# End of mymodule.py
+# End of gmntools.py
