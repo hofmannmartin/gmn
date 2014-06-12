@@ -151,7 +151,7 @@ class gmn():
 		#setting up SPD
 		##setting up problem vector
 		nop = len(self.operatorbasis)
-		c = numpy.zeros(nop*2**(self.__nsys-1), dtype=numpy.float64)
+		c = zeros(nop*2**(self.__nsys-1), dtype=numpy.float64)
 		for index,o in enumerate(self.operatorbasis):
 			c[index] = numpy.trace(numpy.dot(rho,o.matrix)).real
 		##setting up semidefinite constraints
@@ -159,8 +159,8 @@ class gmn():
 		F = []
 		##setting up constraint P_m >= 0
 		for i in range(1,2**(self.__nsys-1)):
-			F0 += [numpy.zeros(self.__dim)]
-			F += [[numpy.zeros(self.__dim) for j in range(i*nop)] + [o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
+			F0 += [zeros(self.__dim)]
+			F += [[zeros(self.__dim) for j in range(i*nop)] + [o.matrix for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
 		##setting up constraint (W-P_m)^(T_m) >= 0
 		for i in range(1,2**(self.__nsys -1)):
 			temp = map(int,numpy.binary_repr(i,self.__nsys))
@@ -168,8 +168,8 @@ class gmn():
 			for index,j in enumerate(temp):
 				if j ==1:
 					subsys.append(index)
-			F0 += [numpy.zeros(self.__dim)]
-			F += [[o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((i-1)*nop)] + [-o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
+			F0 += [zeros(self.__dim)]
+			F += [[o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((i-1)*nop)] + [-o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
 		##setting up constraint (W-P_m)^(T_m) <= 1
 		for i in range(1,2**( self.__nsys -1)):
 			temp = map(int,numpy.binary_repr(i,self.__nsys))
@@ -178,11 +178,57 @@ class gmn():
 				if j ==1:
 					subsys.append(index)
 			F0 += [eye(self.__dimH,dtype=numpy.complex128)]
-			F += [[-o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((i-1)*nop)] + [o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
+			F += [[-o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((i-1)*nop)] + [o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
 		sol = self.__solve(c,F0,F,real,altsolver)
 		self.status = sol['status']
 		self.__W(sol)
 		self.__rhom(sol,real)
+		return -sol['primal objective']
+	def gmn_jungnitsch(self,real=False,altsolver=None):
+		if not self.__rho:
+			raise Exception("Memberfuction gmn() can not be used prior to setting density matrix using the Memberfuction setdensitymatrix(rho).")
+		rho = self.__rho.matrix
+		#initialize standard operatorbasis if no operatorbasis is provided
+		if not self.operatorbasis:
+			self.__initoperatorbasis()
+		#setting up SPD
+		##setting up problem vector
+		nop = len(self.operatorbasis)
+		c = zeros(nop*2**(self.__nsys-1), dtype=numpy.float64)
+		for index,o in enumerate(self.operatorbasis):
+			c[index] = numpy.trace(numpy.dot(rho,o.matrix)).real
+		##setting up semidefinite constraints
+		F0 = []
+		F = []
+		##setting up constraint P_m >= 0
+		for i in range(1,2**(self.__nsys-1)):
+			F0 += [zeros(self.__dim)]
+			F += [[zeros(self.__dim) for j in range(i*nop)] + [o.matrix for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
+		##setting up constraints P_m <= 1
+		for i in range(1,2**(self.__nsys-1)):
+			F0 += [eye(self.__dimH,dtype=numpy.complex128)]
+			F += [[zeros(self.__dim) for j in range(i*nop)] + [-o.matrix for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
+		##setting up constraint (W-P_m)^(T_m) >= 0
+		for i in range(1,2**(self.__nsys -1)):
+			temp = map(int,numpy.binary_repr(i,self.__nsys))
+			subsys = []
+			for index,j in enumerate(temp):
+				if j ==1:
+					subsys.append(index)
+			F0 += [zeros(self.__dim)]
+			F += [[o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((i-1)*nop)] + [-o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
+		##setting up constraint (W-P_m)^(T_m) <= 1
+		for i in range(1,2**( self.__nsys -1)):
+			temp = map(int,numpy.binary_repr(i,self.__nsys))
+			subsys = []
+			for index,j in enumerate(temp):
+				if j ==1:
+					subsys.append(index)
+			F0 += [eye(self.__dimH,dtype=numpy.complex128)]
+			F += [[-o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((i-1)*nop)] + [o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
+		sol = self.__solve(c,F0,F,real,altsolver)
+		self.status = sol['status']
+		self.__W(sol)
 		return -sol['primal objective']
 	def __rho_part_info(self,sol,real= False):
 		rho = zeros(self.__dim, dtype=numpy.complex128)
@@ -214,23 +260,23 @@ class gmn():
 		nmes= len(measurements)
 		mesop = [array(m[0], dtype=numpy.complex128) for m in measurements]
 		nop = len(self.operatorbasis)
-		c = numpy.zeros(nmes+nop*2**(self.__nsys-1), dtype=numpy.float64)
+		c = zeros(nmes+nop*2**(self.__nsys-1), dtype=numpy.float64)
 		for index,o in enumerate(measurements):
 			c[index] = o[1]
 		##setting up semidefinite constraints
 		F0 = []
 		F = []
 		##setting up constraint M >= W
-		F0 += [numpy.zeros(self.__dim)]
-		F += [[m[0] for m in measurements] + [-o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**(self.__nsys-1)-1)*nop)]]
+		F0 += [zeros(self.__dim)]
+		F += [[m[0] for m in measurements] + [-o.matrix for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**(self.__nsys-1)-1)*nop)]]
 		##setting up constraint Q_m <= 1
 		for i in range(1,2**(self.__nsys-1)):
 			F0 += [eye(self.__dimH,dtype=numpy.complex128)]
-			F += [[numpy.zeros(self.__dim) for j in range(nmes)] + [numpy.zeros(self.__dim) for j in range(i*nop)] + [-o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
+			F += [[zeros(self.__dim) for j in range(nmes)] + [zeros(self.__dim) for j in range(i*nop)] + [-o.matrix for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
 		##setting up constraint Q_m >= 0
 		for i in range(1,2**(self.__nsys-1)):
-			F0 += [numpy.zeros(self.__dim)]
-			F += [[numpy.zeros(self.__dim) for j in range(nmes)] + [numpy.zeros(self.__dim) for j in range(i*nop)] + [o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
+			F0 += [zeros(self.__dim)]
+			F += [[zeros(self.__dim) for j in range(nmes)] + [zeros(self.__dim) for j in range(i*nop)] + [o.matrix for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**(self.__nsys-1)-i-1)*nop)]]
 		##setting up constraint W-Q_m^(T_m) >= 0
 		for i in range(1,2**(self.__nsys -1)):
 			temp = map(int,numpy.binary_repr(i,self.__nsys))
@@ -238,8 +284,8 @@ class gmn():
 			for index,j in enumerate(temp):
 				if j ==1:
 					subsys.append(index)
-			F0 += [numpy.zeros(self.__dim)]
-			F += [[numpy.zeros(self.__dim) for j in range(nmes)] + [o.matrix for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((i-1)*nop)] + [-o.ptranspose(subsys) for o in self.operatorbasis] + [numpy.zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
+			F0 += [zeros(self.__dim)]
+			F += [[zeros(self.__dim) for j in range(nmes)] + [o.matrix for o in self.operatorbasis] + [zeros(self.__dim) for j in range((i-1)*nop)] + [-o.ptranspose(subsys) for o in self.operatorbasis] + [zeros(self.__dim) for j in range((2**( self.__nsys -1)-i-1)*nop)]]
 		sol = self.__solve(c,F0,F,real,altsolver)
 		self.status = sol['status']
 		self.__rho_part_info(sol,real)
@@ -255,7 +301,7 @@ class gmn():
 		##setting up problem vector
 		nmes= len(measurements)
 		mesop = [hoperator(m[0],self.__dimsubs) for m in measurements]
-		c = numpy.zeros(nmes, dtype=numpy.float64)
+		c = zeros(nmes, dtype=numpy.float64)
 		for index,o in enumerate(measurements):
 			c[index] = o[1]
 		##setting up semidefinite constraints
@@ -268,7 +314,7 @@ class gmn():
 			for index,j in enumerate(temp):
 				if j ==1:
 					subsys.append(index)
-			F0 += [numpy.zeros(self.__dim)]
+			F0 += [zeros(self.__dim)]
 			F += [[o.ptranspose(subsys) for o in mesop]]
 		##setting up constraint W^(T_m) <= 1
 		for i in range(1,2**(self.__nsys -1)):
