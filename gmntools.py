@@ -23,6 +23,34 @@ solvers.options ['DSDP_Monitor'] = 0 # integer ( default : 0)
 
 
 class gmn():
+	"""
+	The genuine multiparticle negativity toolbox is a collection of methods 
+	to detect and quantify genuine multiparticle entanglement in mixed states
+	using fully decomposable witnesses [1]. It incorparates most of the functionality
+	of the MATLAB program PPTMixer. It extends its functionality to cases, where
+	only partial information on a state is known and contains also the renormalized
+	version of the genuine multiparticle negativity [2].
+	[1] B. Jungnitsch, T. Moroder, and O. Guhne, Phys. Rev. Lett. 106, 190502 (2011).
+	[2] M. Hofmann, T. Moroder, and O. Guhne, J. Phys. A: Math. Theor. 47 155301 (2014).
+	
+	subsystems : list
+		A list constaining the dimensions of the subsystems. The product of these
+		dimensions have to coinside with the number of rows and	collumns of the matrix.
+	matrix : array_like
+		An array_like object representing a density matrix of the given system.
+	opbasis : list of array_like
+		A list of Hermitian matrices spanning the set of all bound operators on the
+		Hilbertspace or some subspace thereof.
+
+	To calculate the genuine multiparticle negativity of the GHZ state:
+	1.) initialize the class.
+	>>> from gmntools import gmn
+	>>> gmntool = gmn([2,2,2],[[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]])
+	
+	2.) call the memberfunction gmn_jmg (original version [1]) or gmn (renormalized [2]).
+	>>> gmntool.gmn()
+	0.499999998369068
+	"""
 	def __init__(self,subsystems,matrix=None,opbasis=[]):
 		self.__dim = (prod(subsystems),prod(subsystems))
 		self.__dimH = prod(subsystems)
@@ -66,7 +94,7 @@ class gmn():
 	def witness_expectationvalue(self,rho=None):
 		if not self.W:
 			raise TypeError("Memberfuction availible after using Memberfunctin gmn only.")
-		if not rho:
+		if rho==None:
 			return numpy.trace(numpy.dot(self.W['W']),self.__rho.matrix)
 		else:
 			return numpy.trace(numpy.dot(self.W['W']),rho)
@@ -184,7 +212,7 @@ class gmn():
 		self.__W(sol)
 		self.__rhom(sol,real)
 		return -sol['primal objective']
-	def gmn_jungnitsch(self,real=False,altsolver=None):
+	def gmn_jmg(self,real=False,altsolver=None):
 		if not self.__rho:
 			raise Exception("Memberfuction gmn() can not be used prior to setting density matrix using the Memberfuction setdensitymatrix(rho).")
 		rho = self.__rho.matrix
