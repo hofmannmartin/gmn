@@ -102,7 +102,7 @@ class gmn():
 		self.__rho = densitymatrix(rho,self.__dimsubs)
 	def setoperatorbasis(self,opbasis=[]):
 		self.operatorbasis = [hoperator(o,self.__dimsubs) for o in opbasis]
-	def setrealsymmbasis(self):
+	def setrealbasis(self):
 		self.__initrealoperatorbasis()
 	def setpaulibasis(self):
 		if not all([2==i for i in self.__dimsubs]):
