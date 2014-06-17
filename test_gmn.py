@@ -79,7 +79,7 @@ class Test_Pauli(unittest.TestCase):
 		rho = numpy.zeros((2**self.n,2**self.n),dtype=numpy.complex128)
 		rho[0,0] = rho[0,-1] = rho[-1,0] = rho[-1,-1] = .5
 		self.rho = rho
-		self.zy = numpy.kron(array([[1,0],[0,-1]],dtype=numpy.complex128), array([[0,-1.j],[1.j,0]],dtype=numpy.complex128))
+		self.zy = self.pauli.operator('zy')
 	
 	def test_pauli(self):
 		# make sure class is correctly initialized
@@ -102,6 +102,14 @@ class Test_GMN(unittest.TestCase):
 		psi[1] = psi[2] = psi[4] = 1.
 		self.w = numpy.outer(psi,psi)/3.
 		self.pauli = pauli(3)
+		measurements = [self.pauli.operator(i) for i in ['xxz','xzx','zxx','zzz']]
+		self.measurements = [(o,numpy.trace(numpy.dot(self.w,o).real)) for o in measurements]
+
+	def test_partinfo(self):
+		# test if W state gets detected using the partial information of the 4 measurements XXZ, XZX, ZXX, XXZ by trying to construct a fully decomposable witness
+		self.assertAlmostEqual(0.25, self.gmn.gmn_partial_info(self.measurements),places=6)
+		# test if W state does not get detected using the partial information of the 4 measurements XXZ, XZX, ZXX, ZZZ by trying to construct a fully PPT witness
+		self.assertAlmostEqual(0, self.gmn.gmn_partial_info_ppt(self.measurements))
 	
 	def test_gmninit(self):
 		# make sure class is correctly initialized
@@ -138,6 +146,8 @@ class Test_GMN(unittest.TestCase):
 		self.assertEqual(self.gmn.status, 'optimal')
 		self.assertAlmostEqual(self.gmn.gmn_jmg(real=True), 0.5, places=6)
 		self.assertEqual(self.gmn.status, 'optimal')
+		# Test if optimal witness gives the right expectation value
+		self.assertAlmostEqual(self.gmn.witness_expectationvalue(), 0.5, places=6)
 		# Test if genuine multiparticle negativity of W state is sqrt(2)/3 with real operatorbasisand real Witnesses
 		self.gmn.setdensitymatrix(self.w)
 		self.gmn.setsympaulibasis()

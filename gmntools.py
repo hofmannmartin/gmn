@@ -95,9 +95,9 @@ class gmn():
 		if not self.W:
 			raise TypeError("Memberfuction availible after using Memberfunctin gmn only.")
 		if rho==None:
-			return numpy.trace(numpy.dot(self.W['W']),self.__rho.matrix)
+			return -numpy.trace(numpy.dot(self.W['W'],self.__rho.matrix)).real
 		else:
-			return numpy.trace(numpy.dot(self.W['W']),rho)
+			return -numpy.trace(numpy.dot(self.W['W'],rho)).real
 	def setdensitymatrix(self,rho):
 		self.__rho = densitymatrix(rho,self.__dimsubs)
 	def setoperatorbasis(self,opbasis=[]):
