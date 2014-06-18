@@ -1,5 +1,6 @@
 """
 Python package for quantifying and bounding genuine multiparticle entanglement
+based on the genuine multiparticle negativity.
 
 GMNTOOLS is a free software package quantifying and bounding genuine 
 multiparticle entanglement based on the Python programming language.
