@@ -5,10 +5,8 @@ import numpy
 from numpy import random, array
 import itertools
 from itertools import chain
-import gmnutils
-from gmnutils import hoperator, densitymatrix, pauli
 import gmntools
-from gmntools import gmn
+from gmntools import gmn, hoperator, densitymatrix, pauli
 import unittest
 
 class Test_hoperator(unittest.TestCase):

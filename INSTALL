@@ -1,0 +1,41 @@
+
+This document describes the standard GMNTOOLS installation procedure on
+Linux systems.
+
+
+Required and optional software
+------------------------------
+
+The package requires version 2.7 or 3.x of Python, and is built from
+source, so the header files and libraries for Python must be installed,
+as well as the core binaries.
+
+The installation requires the Python convex optimization package CVXOPT
+as well as Numpy and Scipy.
+
+The following software libraries are optional.
+
+* DSDP5.8 <www-unix.mcs.anl.gov/DSDP> is a semidefinite programming solver.
+
+
+Installation
+------------
+
+GMNTOOLS can be installed globally by writing:
+
+    python setup.py install
+
+It can also be installed locally by typing:
+
+    python setup.py install --user
+
+To test that the installation was successful, go to the test directory
+and run the unit tests provided
+
+     cd examples/test
+     python test_gmn.py
+
+If Python does not issue an error message, installation was successful.
+
+Additional information can be found in the
+Python documentation <http://docs.python.org/install/index.html>.
