@@ -118,6 +118,29 @@ class gmn():
 				tmp[x,y] = tmp[y,x] = 1.
 				self.operatorbasis += [hoperator(tmp,self.__dimsubs)]
 	def witness_expectationvalue(self,rho=None):
+		"""
+		Witness Expectationvalue
+		Returns the expectation value of a prior compute witness.
+
+		rho : array_like
+			An array_like object representing a density matrix of the given system.
+		
+		As an example we use the GHZ witness and try to detect the W state:
+		>>> from gmntools import gmn
+		
+		Set GHZ and W state
+		>>> ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> w = [[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
+		
+		Call the gmn memberfunction to calculate the optimal witness for the GHZ state
+		>>> gmntool = gmn([2,2,2],ghz)
+		>>> gmntool.gmn()
+		0.499999998369068
+
+		The optimal witness for the GHZ state does not detect the W state
+		>>> gmntool.witness_expectationvalue(w)
+		-0.88501744664092974
+		"""
 		if not self.W:
 			raise TypeError("Memberfuction availible after using Memberfunctin gmn only.")
 		if rho==None:
@@ -125,16 +148,134 @@ class gmn():
 		else:
 			return -numpy.trace(numpy.dot(self.W['W'],rho)).real
 	def setdensitymatrix(self,rho):
+		"""
+		Set the density matrix
+		Sets the density matrix for which the genuine mutliparticle negativity should be computed
+
+		rho : array_like
+			An array_like object representing a density matrix of the given system.
+		
+		Evaluate the genuine multiparticlce negativity first for the GHZ state and afterwards for the W state
+		>>> from gmntools import gmn
+		
+		Set GHZ and W state
+		>>> ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> w = [[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
+		
+		Initialize class for three quibit states
+		>>> gmntool = gmn([2,2,2])
+
+		Set GHZ state and calculate the genuine multiparticlce negativity
+		>>> gmntool.setdensitymatrix(ghz)
+		>>> gmntool.gmn()
+		0.499999998369068
+		
+		Set W state and calculate the genuine multiparticlce negativity
+		>>> gmntool.setdensitymatrix(w)
+		>>> gmntool.gmn()
+		0.4714045153813209
+		"""
 		self.__rho = densitymatrix(rho,self.__dimsubs)
 	def setoperatorbasis(self,opbasis=[]):
+		"""
+		Set an custom operator basis
+		If this basis does not span the full operator space the resulting witnesses lie within the subspace only
+
+		opbasis : list of array_like
+			A list of array_like objects representing a basis in the space of operators/observables.
+
+		Try to find the optimal witness within the operator subspace spanned by pauli operators X,Y,Z and qubit identity matrices (1): 111, XXZ, XZX, ZXX, ZZZ
+		>>> from gmntools import gmn, pauli
+		>>> qb_3 = pauli([2,2,2])
+		>>> basis = [qb_3.operator(i) for i in ['eee','xxz','xzx','zxx','zzz']]
+		>>>  ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> gmntool = gmn([2,2,2],ghz)
+
+		By default a complete basis is used
+		>>> gmntool.gmn()
+		0.499999998369068
+
+		There is no witness within the subspace detecting the GHZ state
+		>>> gmntool.setoperatorbasis(basis)
+		>>> gmntool.gmn()
+		-3.646152630556347e-08
+
+		To reset to the full standard basis call the function without argument
+		>>> gmntool.setoperatorbasis()
+		>>> gmntool.gmn()
+		0.499999998369068
+		"""
 		self.operatorbasis = [hoperator(o,self.__dimsubs) for o in opbasis]
 	def setrealbasis(self):
+		"""
+		Use real operator basis to speed up calculations
+
+		Evaluate the genuine multiparticlce negativity first for the GHZ state and afterwards for the W state
+		>>> from gmntools import gmn
+		
+		Set GHZ state
+		>>> ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		
+		Initialize class for three quibit states
+		>>> gmntool = gmn([2,2,2],ghz)
+
+		Normal evaluation
+		>>> gmntool.gmn()
+		0.499999998369068
+		
+		Fast evaluation using a real operator basis
+		>>> gmntool.setrealbasis()
+		>>> gmntool.gmn(real=True)
+		0.4999999944514258
+		"""
 		self.__initrealoperatorbasis()
 	def setpaulibasis(self):
+		"""
+		Set Pauli operator basis
+		Use a operator basis consisting of tensor products of Pauli operators
+
+		Try to find the optimal witness within the operator subspace spanned by pauli operators X,Y,Z and qubit identity matrices (1): 111, XXZ, XZX, ZXX, ZZZ
+		>>> from gmntools import gmn
+		>>>  ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> gmntool = gmn([2,2,2],ghz)
+
+		Use a basis of tensor products of Pauli matrices as basis
+		>>> gmntool.setpaulibasis()
+		>>> gmntool.gmn()
+		0.49999999836906783
+
+		Reset to the default operator basis
+		>>> gmntool.setoperatorbasis()
+		>>> gmntool.gmn()
+		0.499999998369068
+		"""
 		if not all([2==i for i in self.__dimsubs]):
 			raise TypeError("Memberfuction availible in qubit systems only.")
 		self.setoperatorbasis(pauli(self.__nsys).basis())
 	def setsympaulibasis(self,rho=None):
+		"""
+		Set symmetric Pauli operator basis
+		Determine internal symmetries of a state to provide a basis spanning the minimal subspace containing the optimal witness
+
+		rho : array_like
+			An array_like object representing a density matrix of the given system.
+
+		As an example use the basis symmetric with respect to the GHZ and W state to calculate the genuine multiparticle negativity of the GHZ state
+		>>> from gmntools import gmn
+		>>>  ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> w = [[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
+		>>> gmntool = gmn([2,2,2],ghz)
+
+		Determine a basis symmetric with respect to the current density matrix
+		>>> gmntool.setsympaulibasis()
+		>>> gmntool.gmn()
+		0.4999999983690673
+
+		Change to a basis symmetric with respect to the W state. No witness detecting genuine multiparticle entangelement is found within this subspace
+		>>> gmntool.setsympaulibasis(w)
+		>>> gmntool.gmn()
+		-1.7734501447089677e-09
+		"""
 		if not all([2==i for i in self.__dimsubs]):
 			raise TypeError("Memberfuction availible in qubit systems only.")
 		if not rho:
