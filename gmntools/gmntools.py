@@ -188,7 +188,7 @@ class gmn():
 		>>> from gmntools import gmn, pauli
 		>>> qb_3 = pauli([2,2,2])
 		>>> basis = [qb_3.operator(i) for i in ['eee','xxz','xzx','zxx','zzz']]
-		>>>  ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
 		>>> gmntool = gmn([2,2,2],ghz)
 
 		By default a complete basis is used
@@ -236,7 +236,7 @@ class gmn():
 
 		Try to find the optimal witness within the operator subspace spanned by pauli operators X,Y,Z and qubit identity matrices (1): 111, XXZ, XZX, ZXX, ZZZ
 		>>> from gmntools import gmn
-		>>>  ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
 		>>> gmntool = gmn([2,2,2],ghz)
 
 		Use a basis of tensor products of Pauli matrices as basis
@@ -262,7 +262,7 @@ class gmn():
 
 		As an example use the basis symmetric with respect to the GHZ and W state to calculate the genuine multiparticle negativity of the GHZ state
 		>>> from gmntools import gmn
-		>>>  ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
 		>>> w = [[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
 		>>> gmntool = gmn([2,2,2],ghz)
 
@@ -337,6 +337,39 @@ class gmn():
 			self.rhom['rho_'+m] = rhom
 		return 0
 	def gmn(self,real=False,altsolver=None):
+		"""
+		Calculate the renormalized genuine multiparticle negativity as given in Ref. [*]
+		[*] M. Hofmann, T. Moroder, and O. Guhne, J. Phys. A: Math. Theor. 47 155301 (2014).
+
+		real : Boolean
+			Set to true if the densitymatrix has real eigenvalues only to speed up computation.
+			Use the memberfuction setrealbasis() or manually set a real operator basis to optimize the gain.
+		altsolver : None or 'dsdp'
+			If you have the solver DSDP5.8 installed on your system use it for optimal performance
+
+		As an example use the basis symmetric with respect to the GHZ and W state to calculate the genuine multiparticle negativity of the GHZ state
+		>>> from gmntools import gmn
+		>>> ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> gmntool = gmn([2,2,2],ghz)
+
+		Normal use
+		>>> gmntool.gmn()
+		0.499999998369068
+
+		Use a real operatorbasis
+		>>> gmntool.setrealbasis()
+		>>> gmntool.gmn(True)
+		0.4999999944514258
+
+		Determine a basis symmetric with respect to the current density matrix and use dsdp solver
+		>>> gmntool.setsympaulibasis()
+		>>> gmntool.gmn(altsolver='dsdp')
+		0.4999999766005203
+
+		Since the symmetric basis is real one can further speed up calculations
+		>>> gmntool.gmn(True,'dsdp')
+		0.49999999155988917
+		"""
 		if not self.__rho:
 			raise Exception("Memberfuction gmn() can not be used prior to setting density matrix using the Memberfuction setdensitymatrix(rho).")
 		rho = self.__rho.matrix
@@ -380,6 +413,40 @@ class gmn():
 		self.__rhom(sol,real)
 		return -sol['primal objective']
 	def gmn_jmg(self,real=False,altsolver=None):
+		"""
+		Calculate the genuine multiparticle negativity as given in Ref. [*]
+		[*] B. Jungnitsch, T. Moroder, and O. Guhne, Phys. Rev. Lett. 106, 190502 (2011).
+
+		real : Boolean
+			Set to true if the densitymatrix has real eigenvalues only to speed up computation.
+			Use the memberfuction setrealbasis() or manually set a real operator basis to optimize the gain.
+		altsolver : None or 'dsdp'
+			If you have the solver DSDP5.8 installed on your system use it for optimal performance
+
+		As an example use the basis symmetric with respect to the GHZ and W state to calculate the genuine multiparticle negativity of the GHZ state
+		>>> from gmntools import gmn
+		>>> w = [[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
+		>>> gmntool = gmn([2,2,2],w)
+
+		Normal use
+		>>> gmntool.gmn()
+		0.4714045153813209
+
+		Use a real operatorbasis
+		>>> gmntool.setrealbasis()
+		>>> gmntool.gmn(True)
+		0.4714045166253902
+
+		Determine a basis symmetric with respect to the current density matrix and use dsdp solver
+		>>> gmntool.setsympaulibasis()
+		>>> gmntool.gmn(altsolver='dsdp')
+		0.4714044390821073
+
+		Since the symmetric basis is real one can further speed up calculations
+		>>> gmntool.gmn(True,'dsdp')
+		0.47140449497510417
+		"""
+
 		if not self.__rho:
 			raise Exception("Memberfuction gmn() can not be used prior to setting density matrix using the Memberfuction setdensitymatrix(rho).")
 		rho = self.__rho.matrix
