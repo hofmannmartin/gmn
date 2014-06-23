@@ -43,7 +43,9 @@ class hoperator(object):
 		The product of these dimensions have to coinside with the
 		number of rows and collumns of the matrix.
 
-	>>> x = hoperator([[1,0,0,1],[0,0,0,0],[0,0,0,0],[1,0,0,1]],[2,2])
+	Create a Bell state
+	>>> from gmntools import hoperator
+	>>> x = hoperator([[.5,0,0,.5],[0,0,0,0],[0,0,0,0],[.5,0,0,.5]],[2,2])
 	"""
 	def __init__(self, matrix, subsystems):
 		self.matrix = array(matrix, dtype=numpy.complex128)
@@ -69,7 +71,9 @@ class hoperator(object):
 		was provided by Ville Bergholm (see http://qit.sourceforge.net/) 
 		and licenced under the terms of the GPL3.
 
-		>>> x = hoperator([[1,0,0,1],[0,0,0,0],[0,0,0,0],[1,0,0,1]],[2,2])
+		Create a Bell state
+		>>> from gmntools import hoperator
+		>>> x = hoperator([[.5,0,0,.5],[0,0,0,0],[0,0,0,0],[.5,0,0,.5]],[2,2])
 		
 		Transpose subsytem A
 		>>> x.ptranspose([0])
@@ -112,8 +116,10 @@ class densitymatrix(hoperator):
 		A list constaining the dimensions of the subsystems.
 		The product of these dimensions have to coinside with the
 		number of rows and collumns of the matrix.
-
-	>>> x = hoperator([[1,0,0,1],[0,0,0,0],[0,0,0,0],[1,0,0,1]],[2,2])
+	
+	Create a Bell state
+	>>> from gmntools import densitymatrix
+	>>> x = densitymatrix([[.5,0,0,.5],[0,0,0,0],[0,0,0,0],[.5,0,0,.5]],[2,2])
 	"""
 	def __init__(self, matrix, subsystems):
 		hoperator.__init__(self,matrix,subsystems)
@@ -127,13 +133,16 @@ class densitymatrix(hoperator):
 		subsys : list
 			A list constaining the subsytems of one part of the splitting.
 		
-		>>> x = densitymatrix([[1./2,0,0,1./2],[0,0,0,0],[0,0,0,0],[1./2,0,0,1./2]],[2,2])
+		Create a Bell state
+		>>> from gmntools import densitymatrix
+		>>> x = densitymatrix([[.5,0,0,.5],[0,0,0,0],[0,0,0,0],[.5,0,0,.5]],[2,2])
 		
 		Positivity with respect to the splitting A|B
 		>>> x.ppt([0])
 		False
 
-		>>> x = densitymatrix([[1./2,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,1./2]],[2,2])
+		Try the same with a separable state
+		>>> x = densitymatrix([[.5,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,.5]],[2,2])
 		
 		Positivity with respect to the splitting A|B
 		>>> x.ppt([0])
@@ -155,7 +164,9 @@ class densitymatrix(hoperator):
 		subsys : list
 			A list constaining the subsytems of one part of the splitting.		
 		
-		>>> x = densitymatrix([[1./2,0,0,1./2],[0,0,0,0],[0,0,0,0],[1./2,0,0,1./2]],[2,2])
+		Create a Bell state
+		>>> from gmntools import densitymatrix
+		>>> x = densitymatrix([[.5,0,0,.5],[0,0,0,0],[0,0,0,0],[.5,0,0,.5]],[2,2])
 
 		The negativity with respect to the splitting A|B
 		>>> x.negativity([0])
@@ -174,6 +185,7 @@ class randomlocalmeas(hoperator):
 	The measurement operators are randomly created with respect to local hermitian operator bases
 
 	Initialize class
+	>>> from gmntools import randomlocalmeas
 	>>> A = randomlocalmeas([2,2])
 
 	create random local Measurement
@@ -234,6 +246,7 @@ class randomstates(densitymatrix):
 	The matrices randomly created are equaly distributed with respect to the Hilber-Schmidt norm.
 
 	Initialize class
+	>>> from gmntools import randomlocalmeas
 	>>> x = randomstates([2,2])
 
 	create random matrix
@@ -268,6 +281,7 @@ class pauli():
 	This class allows to provide a basis of tensor products of Pauli operators and identity. Furthermore, it can automatically detect generalized stabilizer symmetries of a state and provide a symmetric operatorbasis.
 
 	Initialize class
+	>>> from gmntools import pauli
 	>>> x = pauli(2)
 
 	Iterate over the two qubit Pauli basis
@@ -314,6 +328,7 @@ class pauli():
 		Returns the n qubits Pauli operator basis.
 		
 		Iterate over the two qubit Pauli basis
+		>>> from gmntools import randomlocalmeas
 		>>> pauli(1).basis()
 			[array([[ 1.+0.j,  0.+0.j],
 				[ 0.+0.j,  1.+0.j]]), array([[ 0.+0.j,  1.+0.j],
@@ -331,6 +346,7 @@ class pauli():
 		>>> rho[0,0] = rho[0,-1] = rho[-1,0] = rho[-1,-1] = .5
 
 		Initialize two qubit pauli class
+		>>> from gmntools import pauli
 		>>> x = pauli(2)
 
 		Calculate symmetric basis ['ee','xx','yy','zz']
@@ -363,6 +379,7 @@ class pauli():
 			for sigma_z use either of 'z', 'Z' or '3'
 	
 		Return ZYX
+		>>> from gmntools import pauli
 		>>> pauli(3).operator('zyx')
 			array([[ 0.+0.j  0.+0.j  0.+0.j  0.-1.j  0.+0.j  0.+0.j  0.+0.j  0.+0.j]
 			 [ 0.+0.j  0.+0.j  0.-1.j  0.+0.j  0.+0.j  0.+0.j  0.+0.j  0.+0.j]
@@ -385,5 +402,3 @@ class pauli():
 			if i in ['x','X','3']:
 				sequence += [self.x]
 		return self.__tensor(*sequence)
-
-# End of operator.py

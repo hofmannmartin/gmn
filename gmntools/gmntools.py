@@ -446,7 +446,6 @@ class gmn():
 		>>> gmntool.gmn(True,'dsdp')
 		0.47140449497510417
 		"""
-
 		if not self.__rho:
 			raise Exception("Memberfuction gmn() can not be used prior to setting density matrix using the Memberfuction setdensitymatrix(rho).")
 		rho = self.__rho.matrix
@@ -509,6 +508,47 @@ class gmn():
 			self.W_part_info += sol['x'][i]*measurements[i][0]
 		return 0
 	def gmn_partial_info(self,meas,real=False,altsolver=None):
+		"""
+		Lower bound the genuine multiparticle negativity as given in Ref. [*] based on incomplete
+		tomographic data without the need of state reconstruction.
+		The main idea is to construct a fully decomposable witness (and its expectation value) 
+		from the given measurements based on which the genuine multiparticle negativity is lower bounded.
+		[*] M. Hofmann, T. Moroder, and O. Guhne, J. Phys. A: Math. Theor. 47 155301 (2014).
+		
+		meas : list of tuples
+			A list of tuples. The first entry of the tuple is an array_like object representing the 
+			measurement operator. The second entry represents the measured value.
+		real : Boolean
+			Set to true if the densitymatrix has real eigenvalues only to speed up computation.
+			Use the memberfuction setrealbasis() or manually set a real operator basis to optimize the gain.
+		altsolver : None or 'dsdp'
+			If you have the solver DSDP5.8 installed on your system use it for optimal performance
+
+		As example consider the GHZ and W state of a three qubit system
+		>>> ghz = [[.5,0,0,0,0,0,0,.5],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[.5,0,0,0,0,0,0,.5]]
+		>>> w = [[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
+		
+		Measure the GHZ and W state in just four directions given by tensor products of Pauli operators XXZ, XZX, ZXX, ZZZ
+		>>> from gmntools import gmn, pauli
+		>>> from numpy import trace, dot
+		>>> pauliop = pauli(3)
+		>>> measurements = [pauliop.operator(i) for i in ['xxz','xzx','zxx','zzz']
+]
+		>>> meas_ghz = [(o,trace(dot(ghz,o)).real) for o in measurements]
+		>>> meas_w = [(o,trace(dot(w,o)).real) for o in measurements]
+
+		Initialize gmn class
+		>>> gmntool = gmn([2,2,2])
+
+		The GHZ state is not detected by the partial information given by the measurements XXZ, XZX, ZXX, ZZZ
+		>>> gmntool.gmn_partial_info(meas_ghz)
+		-3.7752134989951026e-08
+
+		For the W state the measurements are real, which can be exploited. The lower bound detects the state to be genuine multiparticle entangled.
+		>>> gmntool.setrealbasis()
+		>>> gmntool.gmn_partial_info(meas_w)
+		0.2499999365022932
+		"""
 		measurements = list(meas)
 		if type(measurements) is not list:
 			if [m for m in measurements if (type(m) is not tuple and type(m) is not list) or len(m)!=2 or type(m[1]) not in [int,complex,float,long]]:
@@ -554,6 +594,42 @@ class gmn():
 		self.__W_part_info(sol,measurements)
 		return -sol['primal objective']
 	def gmn_partial_info_ppt(self,meas,real=False,altsolver=None):
+		"""
+		Lower bound the genuine multiparticle negativity as given in Ref. [*] based
+		on incomplete tomographic data without the need of state reconstruction.
+		Here, however, fully PPT witnesses are used compared to fully decomposable 
+		witnesses in the gmn_partial_info memberfunction. Hence, fewer states are 
+		detected and in general more measurements are needed.
+		[*] M. Hofmann, T. Moroder, and O. Guhne, J. Phys. A: Math. Theor. 47 155301 (2014).
+		
+		meas : list of tuples
+			A list of tuples. The first entry of the tuple is an array_like object representing the 
+			measurement operator. The second entry represents the measured value.
+		real : Boolean
+			Set to true if the densitymatrix has real eigenvalues only to speed up computation.
+			Use the memberfuction setrealbasis() or manually set a real operator basis to optimize the gain.
+		altsolver : None or 'dsdp'
+			If you have the solver DSDP5.8 installed on your system use it for optimal performance
+
+		As example consider the W state
+		>>> w = [[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,1./3.,1./3.,0,1./3.,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
+		
+		As in the memberfunction gmn_partial_info measure the W state in just four directions given by tensor products of Pauli operators XXZ, XZX, ZXX, ZZZ
+		>>> from gmntools import gmn, pauli
+		>>> from numpy import trace, dot
+		>>> pauliop = pauli(3)
+		>>> measurements = [pauliop.operator(i) for i in ['xxz','xzx','zxx','zzz']
+]
+		>>> meas_w = [(o,trace(dot(w,o)).real) for o in measurements]
+
+		Initialize gmn class
+		>>> gmntool = gmn([2,2,2])
+
+		No fully PPT witness can be constructed from the given measurements, which can detect the W state
+		>>> gmntool.setrealbasis()
+		>>> gmntool.gmn_partial_info(meas_w)
+		-4.6050924423687366e-10
+		"""
 		measurements = list(meas)
 		if type(measurements) is not list:
 			if [m for m in measurements if (type(m) is not tuple and type(m) is not list) or len(m)!=2 or type(m[1]) not in [int,complex,float,long]]:
@@ -590,5 +666,3 @@ class gmn():
 		sol = self.__solve(c,F0,F,real,altsolver)
 		self.status = sol['status']
 		return -sol['primal objective']
-
-# End of gmntools.py
