@@ -15,12 +15,12 @@
 # can be achieved using NMIN measurements.
 
 import gmntools, numpy
-from gmntools import gmn, randomstates, randomlocalmeas
+from gmntools import gmn, randomstates, randomlocalmeas, densitymatrix
 
 #number of runs
 n = 100
-subsystems = [2,2,2]
-weight = 0.5 #the maximal weight the mixed state can have in the mixture with the pure one
+subsystems = [2,2]
+weight = 0.4 #the maximal weight the mixed state can have in the mixture with the pure one
 
 # initialize necesarry classes
 locmeas = randomlocalmeas(subsystems)
@@ -33,16 +33,16 @@ def randstate(minweight):
 	p = minweight*numpy.random.rand(1)
 	rhopure = numpy.outer(psi.conjugate(),psi)
 	rhopure /= numpy.trace(rhopure)
-	return (1-p)*rhopure + p*rhomixed.random()
+	return densitymatrix((1-p)*rhopure + p*rhomixed.random(),subsystems)
 
 for i in range(n):
 	rho = randstate(weight)
-	GMN.setdensitymatrix(rho)
-	genneg = GMN.gmn(altsolver='dsdp')
+	GMN.setdensitymatrix(rho.matrix)
+	genneg = rho.negativity([0])
 	if genneg > 0:
 		meas = []
 		for j in range(dim**2):
-			expvalue = numpy.trace(numpy.dot(rho,locmeas.random())).real
+			expvalue = numpy.trace(numpy.dot(rho.matrix,locmeas.random())).real
 			meas += [(locmeas.matrix,expvalue)]
 		xlow = 0
 		xhigh = dim**2
